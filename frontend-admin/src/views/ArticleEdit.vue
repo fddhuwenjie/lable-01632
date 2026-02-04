@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NSpace, useMessage } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
-import { articlesApi, categoriesApi, tagsApi, type Article, type Category, type Tag } from '@/api'
+import { articlesApi, categoriesApi, tagsApi, type Article, type Category, type Tag, getErrorMessage } from '@/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -52,7 +52,7 @@ async function loadOptions() {
     categories.value = categoriesRes
     tags.value = tagsRes
   } catch (error) {
-    message.error('加载选项失败')
+    message.error(getErrorMessage(error))
   }
 }
 
@@ -71,7 +71,7 @@ async function loadArticle() {
       status: article.status
     }
   } catch (error) {
-    message.error('加载文章失败')
+    message.error(getErrorMessage(error))
     router.push('/articles')
   } finally {
     loading.value = false
@@ -103,10 +103,8 @@ async function handleSave(publish = false) {
     }
 
     router.push('/articles')
-  } catch (error: any) {
-    if (error?.detail) {
-      message.error(error.detail)
-    }
+  } catch (error) {
+    message.error(getErrorMessage(error))
   } finally {
     saving.value = false
   }

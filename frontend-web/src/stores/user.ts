@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authApi, type User } from '@/api'
+import { encryptPassword } from '@/utils/crypto'
 
 export const useUserStore = defineStore('user', () => {
   const user = ref<User | null>(null)
@@ -9,7 +10,8 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = computed(() => !!token.value)
 
   async function login(username: string, password: string) {
-    const res = await authApi.login({ username, password })
+    const encryptedPassword = await encryptPassword(password)
+    const res = await authApi.login({ username, password: encryptedPassword })
     token.value = res.access_token
     localStorage.setItem('token', res.access_token)
     await fetchUser()
@@ -17,7 +19,8 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function register(username: string, email: string, password: string) {
-    return authApi.register({ username, email, password })
+    const encryptedPassword = await encryptPassword(password)
+    return authApi.register({ username, email, password: encryptedPassword })
   }
 
   async function fetchUser() {

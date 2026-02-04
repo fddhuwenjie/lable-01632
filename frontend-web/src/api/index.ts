@@ -1,4 +1,57 @@
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
+
+// API 错误类型
+export interface ApiError {
+  error: boolean
+  error_code: string
+  detail: string
+  path?: string
+}
+
+// 错误码映射
+const ERROR_MESSAGES: Record<string, string> = {
+  UNAUTHORIZED: '登录已过期，请重新登录',
+  FORBIDDEN: '没有权限执行此操作',
+  NOT_FOUND: '请求的资源不存在',
+  VALIDATION_ERROR: '数据验证失败',
+  INTERNAL_ERROR: '服务器错误，请稍后重试',
+  NETWORK_ERROR: '网络连接失败，请检查网络',
+  TIMEOUT: '请求超时，请稍后重试'
+}
+
+// 获取友好错误信息
+export function getErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    const axiosError = error as AxiosError<ApiError>
+    
+    if (!axiosError.response) {
+      if (axiosError.code === 'ECONNABORTED') {
+        return ERROR_MESSAGES.TIMEOUT
+      }
+      return ERROR_MESSAGES.NETWORK_ERROR
+    }
+    
+    const data = axiosError.response.data
+    if (data?.detail) {
+      return data.detail
+    }
+    if (data?.error_code && ERROR_MESSAGES[data.error_code]) {
+      return ERROR_MESSAGES[data.error_code]
+    }
+    
+    const status = axiosError.response.status
+    if (status === 401) return ERROR_MESSAGES.UNAUTHORIZED
+    if (status === 403) return ERROR_MESSAGES.FORBIDDEN
+    if (status === 404) return ERROR_MESSAGES.NOT_FOUND
+    if (status >= 500) return ERROR_MESSAGES.INTERNAL_ERROR
+  }
+  
+  if (error instanceof Error) {
+    return error.message
+  }
+  
+  return '发生未知错误'
+}
 
 const api = axios.create({
   baseURL: '/api',
@@ -21,12 +74,24 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => response.data,
-  (error) => {
+  (error: AxiosError<ApiError>) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
-      window.location.href = '/login'
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login'
+      }
     }
-    return Promise.reject(error.response?.data || error)
+    
+    if (import.meta.env.DEV) {
+      console.error('[API Error]', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        data: error.response?.data
+      })
+    }
+    
+    return Promise.reject(error)
   }
 )
 

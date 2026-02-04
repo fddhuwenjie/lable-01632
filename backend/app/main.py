@@ -1,9 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
+import traceback
 
 from app.core.config import settings
 from app.core.database import engine, Base
+from app.core.exceptions import AppException
+from app.core.logger import logger, log_error, log_info
 from app.api import auth, articles, categories, tags, users, settings as settings_api, stats
 from app.core.init_data import init_db
 
@@ -14,13 +18,10 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     await init_db()
-    print("=" * 50)
-    print("🚀 Startup Success")
-    print(f"📦 Backend API: http://localhost:8000")
-    print(f"📖 API Docs: http://localhost:8000/docs")
-    print("=" * 50)
+    log_info("服务启动成功", api_url="http://localhost:8000", docs_url="http://localhost:8000/docs")
     yield
     # Shutdown
+    log_info("服务关闭")
     await engine.dispose()
 
 
@@ -30,6 +31,46 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+
+# 全局异常处理
+@app.exception_handler(AppException)
+async def app_exception_handler(request: Request, exc: AppException):
+    log_error(
+        f"应用异常: {exc.detail}",
+        path=request.url.path,
+        method=request.method,
+        error_code=exc.error_code
+    )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": True,
+            "error_code": exc.error_code,
+            "detail": exc.detail,
+            "path": request.url.path
+        }
+    )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    log_error(
+        f"未处理异常: {str(exc)}",
+        exc=exc,
+        path=request.url.path,
+        method=request.method,
+        traceback=traceback.format_exc()
+    )
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": True,
+            "error_code": "INTERNAL_ERROR",
+            "detail": "服务器内部错误，请稍后重试",
+            "path": request.url.path
+        }
+    )
 
 # CORS
 app.add_middleware(

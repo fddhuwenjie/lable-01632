@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { NIcon, NTag, NPagination, NSkeleton, NEmpty, NSelect } from 'naive-ui'
+import { NIcon, NTag, NPagination, NEmpty, NSelect } from 'naive-ui'
 import { TimeOutline, EyeOutline } from '@vicons/ionicons5'
 import { articlesApi, categoriesApi, tagsApi, type Article, type Category, type Tag } from '@/api'
 
@@ -19,14 +19,15 @@ const selectedCategory = ref<number | null>(null)
 const selectedTag = ref<number | null>(null)
 
 onMounted(async () => {
-  await Promise.all([loadArticles(), loadFilters()])
-  
+  // 先从 URL 读取参数，再加载数据，避免二次请求导致抖动
   if (route.query.category) {
     selectedCategory.value = Number(route.query.category)
   }
   if (route.query.tag) {
     selectedTag.value = Number(route.query.tag)
   }
+  
+  await Promise.all([loadArticles(), loadFilters()])
 })
 
 async function loadArticles() {
@@ -122,23 +123,16 @@ watch(tags, (newTags) => {
       />
     </div>
 
-    <div v-if="loading" class="space-y-6">
-      <div v-for="i in 4" :key="i" class="bg-dark-card rounded-xl p-6 border border-dark-border">
-        <NSkeleton text :repeat="4" />
-      </div>
-    </div>
-
-    <div v-else-if="articles.length === 0" class="py-20">
+    <div v-if="!loading && articles.length === 0" class="py-20">
       <NEmpty description="暂无文章" />
     </div>
 
     <div v-else class="space-y-6">
       <RouterLink
-        v-for="(article, index) in articles"
+        v-for="article in articles"
         :key="article.id"
         :to="`/article/${article.id}`"
-        class="block group bg-dark-card rounded-xl p-6 border border-dark-border hover:border-primary-500/50 transition-all hover:-translate-y-1 animate-slide-up"
-        :style="{ animationDelay: `${index * 50}ms` }"
+        class="block group bg-dark-card rounded-xl p-6 border border-dark-border hover:border-primary-500/50 transition-all hover:-translate-y-1"
       >
         <div class="flex flex-col md:flex-row gap-6">
           <div v-if="article.cover_image" class="md:w-64 flex-shrink-0">

@@ -15,6 +15,8 @@ const formValue = ref<SiteSettings>({
   site_keywords: '',
   author_name: '',
   author_bio: '',
+  author_avatar: '',
+  github_url: '',
   email: ''
 })
 
