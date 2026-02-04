@@ -8,16 +8,55 @@ export interface ApiError {
   path?: string
 }
 
-// 错误码映射
+// 错误码映射 - 更完善的错误提示
 const ERROR_MESSAGES: Record<string, string> = {
+  // 认证相关
   UNAUTHORIZED: '登录已过期，请重新登录',
   FORBIDDEN: '没有权限执行此操作',
+  INVALID_CREDENTIALS: '用户名或密码错误',
+  TOKEN_EXPIRED: '登录已过期，请重新登录',
+  
+  // 资源相关
   NOT_FOUND: '请求的资源不存在',
   CONFLICT: '资源已存在',
-  VALIDATION_ERROR: '数据验证失败',
-  INTERNAL_ERROR: '服务器错误，请稍后重试',
-  NETWORK_ERROR: '网络连接失败，请检查网络',
-  TIMEOUT: '请求超时，请稍后重试'
+  ALREADY_EXISTS: '该数据已存在',
+  
+  // 数据验证
+  VALIDATION_ERROR: '数据验证失败，请检查输入',
+  INVALID_INPUT: '输入数据格式不正确',
+  
+  // 服务器错误
+  INTERNAL_ERROR: '服务器繁忙，请稍后重试',
+  DATABASE_ERROR: '数据库操作失败，请稍后重试',
+  
+  // 网络错误
+  NETWORK_ERROR: '网络连接失败，请检查网络设置',
+  TIMEOUT: '请求超时，请检查网络后重试',
+  CONNECTION_REFUSED: '无法连接到服务器',
+  
+  // 业务错误
+  CANNOT_DELETE_ADMIN: '不能删除超级管理员',
+  CANNOT_MODIFY_ADMIN: '不能修改超级管理员',
+  CATEGORY_HAS_ARTICLES: '该分类下还有文章，无法删除',
+  TAG_HAS_ARTICLES: '该标签下还有文章，无法删除'
+}
+
+// HTTP 状态码对应的友好提示
+const HTTP_STATUS_MESSAGES: Record<number, string> = {
+  400: '请求参数错误',
+  401: '请先登录',
+  403: '没有操作权限',
+  404: '请求的内容不存在',
+  405: '请求方法不允许',
+  408: '请求超时',
+  409: '数据冲突',
+  413: '上传的文件太大',
+  422: '数据验证失败',
+  429: '请求太频繁，请稍后再试',
+  500: '服务器内部错误',
+  502: '网关错误',
+  503: '服务暂时不可用',
+  504: '网关超时'
 }
 
 // 获取友好错误信息
@@ -25,10 +64,16 @@ export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<ApiError>
     
-    // 网络错误
+    // 网络错误（无响应）
     if (!axiosError.response) {
       if (axiosError.code === 'ECONNABORTED') {
         return ERROR_MESSAGES.TIMEOUT
+      }
+      if (axiosError.code === 'ERR_NETWORK') {
+        return ERROR_MESSAGES.NETWORK_ERROR
+      }
+      if (axiosError.message?.includes('Network Error')) {
+        return ERROR_MESSAGES.CONNECTION_REFUSED
       }
       return ERROR_MESSAGES.NETWORK_ERROR
     }
@@ -36,6 +81,7 @@ export function getErrorMessage(error: unknown): string {
     // API 返回的错误
     const data = axiosError.response.data
     if (data?.detail) {
+      // 优先使用后端返回的具体错误信息
       return data.detail
     }
     if (data?.error_code && ERROR_MESSAGES[data.error_code]) {
@@ -44,9 +90,11 @@ export function getErrorMessage(error: unknown): string {
     
     // HTTP 状态码错误
     const status = axiosError.response.status
-    if (status === 401) return ERROR_MESSAGES.UNAUTHORIZED
-    if (status === 403) return ERROR_MESSAGES.FORBIDDEN
-    if (status === 404) return ERROR_MESSAGES.NOT_FOUND
+    if (HTTP_STATUS_MESSAGES[status]) {
+      return HTTP_STATUS_MESSAGES[status]
+    }
+    
+    // 通用错误
     if (status >= 500) return ERROR_MESSAGES.INTERNAL_ERROR
   }
   
@@ -54,11 +102,27 @@ export function getErrorMessage(error: unknown): string {
     return error.message
   }
   
-  return '发生未知错误'
+  return '发生未知错误，请稍后重试'
+}
+
+// 判断是否为网络错误（可重试）
+export function isNetworkError(error: unknown): boolean {
+  if (axios.isAxiosError(error)) {
+    return !error.response || error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK'
+  }
+  return false
+}
+
+// 判断是否为认证错误
+export function isAuthError(error: unknown): boolean {
+  if (axios.isAxiosError(error)) {
+    return error.response?.status === 401
+  }
+  return false
 }
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'

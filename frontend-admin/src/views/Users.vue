@@ -66,12 +66,18 @@ const columns: DataTableColumns<User> = [
     title: '操作',
     key: 'actions',
     width: 220,
-    render: (row) => h(NSpace, { wrap: false }, {
-      default: () => [
-        h(NButton, { size: 'small', quaternary: true, onClick: () => handleToggleRole(row) }, { default: () => row.role === 'admin' ? '取消管理员' : '设为管理员' }),
-        h(NButton, { size: 'small', quaternary: true, type: 'error', onClick: () => handleDelete(row) }, { icon: () => h(NIcon, null, { default: () => h(TrashOutline) }), default: () => '删除' })
-      ]
-    })
+    render: (row) => {
+      // admin 用户不显示操作按钮
+      if (row.username === 'admin') {
+        return h('span', { style: { color: '#999', fontSize: '12px' } }, '超级管理员')
+      }
+      return h(NSpace, { wrap: false }, {
+        default: () => [
+          h(NButton, { size: 'small', quaternary: true, onClick: () => handleToggleRole(row) }, { default: () => row.role === 'admin' ? '取消管理员' : '设为管理员' }),
+          h(NButton, { size: 'small', quaternary: true, type: 'error', onClick: () => handleDelete(row) }, { icon: () => h(NIcon, null, { default: () => h(TrashOutline) }), default: () => '删除' })
+        ]
+      })
+    }
   }
 ]
 

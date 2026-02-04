@@ -77,11 +77,17 @@ const router = createRouter({
   }
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   document.title = `${to.meta.title || 'Admin'} - 后台管理`
   
   if (to.meta.requiresAuth) {
     const userStore = useUserStore()
+    
+    // 等待用户信息加载完成
+    if (!userStore.initialized) {
+      await userStore.initPromise
+    }
+    
     if (!userStore.isLoggedIn) {
       next({ name: 'Login', query: { redirect: to.fullPath } })
       return

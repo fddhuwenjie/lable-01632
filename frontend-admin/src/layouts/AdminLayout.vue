@@ -11,9 +11,7 @@ import {
   PeopleOutline,
   SettingsOutline,
   MenuOutline,
-  LogOutOutline,
-  AddOutline,
-  GlobeOutline
+  LogOutOutline
 } from '@vicons/ionicons5'
 import { useUserStore } from '@/stores/user'
 
@@ -35,20 +33,9 @@ const menuOptions: MenuOption[] = [
     icon: renderIcon(HomeOutline)
   },
   {
-    label: '内容管理',
-    key: 'content',
-    icon: renderIcon(DocumentTextOutline),
-    children: [
-      {
-        label: () => h(RouterLink, { to: '/articles' }, { default: () => '文章列表' }),
-        key: 'Articles'
-      },
-      {
-        label: () => h(RouterLink, { to: '/article/create' }, { default: () => '创建文章' }),
-        key: 'CreateArticle',
-        icon: renderIcon(AddOutline)
-      }
-    ]
+    label: () => h(RouterLink, { to: '/articles' }, { default: () => '文章管理' }),
+    key: 'Articles',
+    icon: renderIcon(DocumentTextOutline)
   },
   {
     label: () => h(RouterLink, { to: '/categories' }, { default: () => '分类管理' }),
@@ -73,15 +60,6 @@ const menuOptions: MenuOption[] = [
 ]
 
 const userDropdownOptions = [
-  {
-    label: '访问前台',
-    key: 'frontend',
-    icon: renderIcon(GlobeOutline)
-  },
-  {
-    type: 'divider',
-    key: 'd1'
-  },
   {
     label: '退出登录',
     key: 'logout',

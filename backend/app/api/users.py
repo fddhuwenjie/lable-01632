@@ -116,6 +116,10 @@ async def update_user_role(
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     
+    # 保护 admin 用户
+    if user.username == "admin":
+        raise HTTPException(status_code=403, detail="不能修改超级管理员的角色")
+    
     if role_data.role not in ["admin", "user"]:
         raise HTTPException(status_code=400, detail="无效的角色")
     
@@ -138,6 +142,10 @@ async def delete_user(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
+    
+    # 保护 admin 用户
+    if user.username == "admin":
+        raise HTTPException(status_code=403, detail="不能删除超级管理员")
     
     await db.delete(user)
     return {"message": "删除成功"}

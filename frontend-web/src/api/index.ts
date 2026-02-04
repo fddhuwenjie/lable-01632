@@ -8,15 +8,37 @@ export interface ApiError {
   path?: string
 }
 
-// 错误码映射
+// 错误码映射 - 更完善的错误提示
 const ERROR_MESSAGES: Record<string, string> = {
+  // 认证相关
   UNAUTHORIZED: '登录已过期，请重新登录',
   FORBIDDEN: '没有权限执行此操作',
-  NOT_FOUND: '请求的资源不存在',
-  VALIDATION_ERROR: '数据验证失败',
-  INTERNAL_ERROR: '服务器错误，请稍后重试',
-  NETWORK_ERROR: '网络连接失败，请检查网络',
-  TIMEOUT: '请求超时，请稍后重试'
+  INVALID_CREDENTIALS: '用户名或密码错误',
+  
+  // 资源相关
+  NOT_FOUND: '请求的内容不存在',
+  
+  // 数据验证
+  VALIDATION_ERROR: '数据验证失败，请检查输入',
+  
+  // 服务器错误
+  INTERNAL_ERROR: '服务器繁忙，请稍后重试',
+  
+  // 网络错误
+  NETWORK_ERROR: '网络连接失败，请检查网络设置',
+  TIMEOUT: '请求超时，请检查网络后重试'
+}
+
+// HTTP 状态码对应的友好提示
+const HTTP_STATUS_MESSAGES: Record<number, string> = {
+  400: '请求参数错误',
+  401: '请先登录',
+  403: '没有操作权限',
+  404: '请求的内容不存在',
+  429: '请求太频繁，请稍后再试',
+  500: '服务器内部错误',
+  502: '网关错误',
+  503: '服务暂时不可用'
 }
 
 // 获取友好错误信息
@@ -40,9 +62,10 @@ export function getErrorMessage(error: unknown): string {
     }
     
     const status = axiosError.response.status
-    if (status === 401) return ERROR_MESSAGES.UNAUTHORIZED
-    if (status === 403) return ERROR_MESSAGES.FORBIDDEN
-    if (status === 404) return ERROR_MESSAGES.NOT_FOUND
+    if (HTTP_STATUS_MESSAGES[status]) {
+      return HTTP_STATUS_MESSAGES[status]
+    }
+    
     if (status >= 500) return ERROR_MESSAGES.INTERNAL_ERROR
   }
   
@@ -54,7 +77,7 @@ export function getErrorMessage(error: unknown): string {
 }
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
