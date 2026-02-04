@@ -81,8 +81,13 @@ async function loadArticle() {
 async function handleSave(publish = false) {
   try {
     await formRef.value?.validate()
-    saving.value = true
-
+  } catch {
+    message.warning('请填写必填项')
+    return
+  }
+  
+  saving.value = true
+  try {
     const data: Partial<Article> = {
       title: formValue.value.title,
       slug: formValue.value.slug || formValue.value.title.toLowerCase().replace(/\s+/g, '-'),
