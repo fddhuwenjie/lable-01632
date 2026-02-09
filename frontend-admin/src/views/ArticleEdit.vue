@@ -3,7 +3,9 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NSpace, useMessage } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
-import { articlesApi, categoriesApi, tagsApi, type Article, type Category, type Tag, getErrorMessage } from '@/api'
+import { MdEditor } from 'md-editor-v3'
+import 'md-editor-v3/lib/style.css'
+import { articlesApi, categoriesApi, tagsApi, uploadApi, type Article, type Category, type Tag, getErrorMessage } from '@/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -38,6 +40,20 @@ const rules: FormRules = {
 
 const categoryOptions = computed(() => categories.value.map(c => ({ label: c.name, value: c.id })))
 const tagOptions = computed(() => tags.value.map(t => ({ label: t.name, value: t.id })))
+
+// 图片上传处理
+async function onUploadImg(files: File[], callback: (urls: string[]) => void) {
+  const urls: string[] = []
+  for (const file of files) {
+    try {
+      const res = await uploadApi.uploadImage(file)
+      urls.push(res.url)
+    } catch (error) {
+      message.error(`上传失败: ${getErrorMessage(error)}`)
+    }
+  }
+  callback(urls)
+}
 
 onMounted(async () => {
   await loadOptions()
@@ -131,8 +147,15 @@ async function handleSave(publish = false) {
         <NInput v-model:value="formValue.summary" type="textarea" placeholder="请输入文章摘要" :rows="3" />
       </NFormItem>
 
-      <NFormItem path="content" label="内容 (支持 Markdown)">
-        <NInput v-model:value="formValue.content" type="textarea" placeholder="请输入文章内容，支持 Markdown 格式" :rows="15" />
+      <NFormItem path="content" label="内容 (Markdown)">
+        <MdEditor
+          v-model="formValue.content"
+          theme="dark"
+          :preview="true"
+          style="height: 500px; width: 100%"
+          placeholder="请输入文章内容，支持 Markdown 格式"
+          @on-upload-img="onUploadImg"
+        />
       </NFormItem>
 
       <NFormItem path="cover_image" label="封面图片 URL">
@@ -157,3 +180,10 @@ async function handleSave(publish = false) {
     </NForm>
   </NCard>
 </template>
+
+<style scoped>
+:deep(.md-editor) {
+  --md-bk-color: #1a1a2e;
+  border-radius: 8px;
+}
+</style>

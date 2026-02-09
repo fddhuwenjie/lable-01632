@@ -232,12 +232,14 @@ export interface PaginatedResponse<T> {
 export const authApi = {
   login: (data: { username: string; password: string }): Promise<{ access_token: string; token_type: string }> =>
     api.post('/auth/login', data),
+  register: (data: { username: string; email: string; password: string }): Promise<User> =>
+    api.post('/auth/register', data),
   getCurrentUser: (): Promise<User> => api.get('/auth/me')
 }
 
 // Articles API
 export const articlesApi = {
-  getList: (params?: { page?: number; page_size?: number; category_id?: number; tag_id?: number; status?: string }): Promise<PaginatedResponse<Article>> =>
+  getList: (params?: { page?: number; page_size?: number; category_id?: number; tag_id?: number; status?: string; my_articles?: boolean }): Promise<PaginatedResponse<Article>> =>
     api.get('/articles', { params }),
   getById: (id: number): Promise<Article> => api.get(`/articles/${id}`),
   create: (data: Partial<Article>): Promise<Article> => api.post('/articles', data),
@@ -291,6 +293,17 @@ export const statsApi = {
     recent_articles: Article[]
     popular_articles: Article[]
   }> => api.get('/stats/dashboard')
+}
+
+// Upload API
+export const uploadApi = {
+  uploadImage: async (file: File): Promise<{ url: string }> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/upload/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  }
 }
 
 export default api

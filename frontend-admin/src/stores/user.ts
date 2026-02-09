@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authApi, type User, getErrorMessage } from '@/api'
-import { encryptPassword } from '@/utils/crypto'
 
 export const useUserStore = defineStore('user', () => {
   const user = ref<User | null>(null)
@@ -14,21 +13,20 @@ export const useUserStore = defineStore('user', () => {
 
   async function login(username: string, password: string) {
     try {
-      // RSA 加密密码
-      const encryptedPassword = await encryptPassword(password)
-      const res = await authApi.login({ username, password: encryptedPassword })
+      const res = await authApi.login({ username, password })
       token.value = res.access_token
       localStorage.setItem('admin_token', res.access_token)
       await fetchUser()
-      
-      if (user.value?.role !== 'admin') {
-        logout()
-        throw new Error('权限不足，只有管理员可以登录')
-      }
-      
       return res
     } catch (error) {
-      // 使用友好的错误信息
+      throw new Error(getErrorMessage(error))
+    }
+  }
+
+  async function register(username: string, email: string, password: string) {
+    try {
+      return await authApi.register({ username, email, password })
+    } catch (error) {
       throw new Error(getErrorMessage(error))
     }
   }
@@ -42,7 +40,6 @@ export const useUserStore = defineStore('user', () => {
     try {
       user.value = await authApi.getCurrentUser()
     } catch {
-      // token 无效，清除
       token.value = null
       user.value = null
       localStorage.removeItem('admin_token')
@@ -58,7 +55,6 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('admin_token')
   }
 
-  // 初始化时获取用户信息
   const initPromise = token.value ? fetchUser() : Promise.resolve().then(() => { initialized.value = true })
 
   return {
@@ -69,6 +65,7 @@ export const useUserStore = defineStore('user', () => {
     isLoggedIn,
     isAdmin,
     login,
+    register,
     fetchUser,
     logout,
     initPromise

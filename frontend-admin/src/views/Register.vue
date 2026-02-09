@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter, useRoute, RouterLink } from 'vue-router'
+import { ref } from 'vue'
+import { useRouter, RouterLink } from 'vue-router'
 import { NForm, NFormItem, NInput, NButton, NIcon, useMessage } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
-import { PersonOutline, LockClosedOutline, RocketOutline } from '@vicons/ionicons5'
+import { PersonOutline, LockClosedOutline, MailOutline, RocketOutline } from '@vicons/ionicons5'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
-const route = useRoute()
 const message = useMessage()
 const userStore = useUserStore()
 
@@ -15,46 +14,44 @@ const formRef = ref<FormInst | null>(null)
 const loading = ref(false)
 const formValue = ref({
   username: '',
-  password: ''
+  email: '',
+  password: '',
+  confirmPassword: ''
 })
 
 const rules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 3, max: 20, message: '用户名长度为3-20个字符', trigger: 'blur' }
+  ],
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
+  ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码至少6位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认密码', trigger: 'blur' },
+    {
+      validator: (_rule, value) => value === formValue.value.password,
+      message: '两次输入的密码不一致',
+      trigger: 'blur'
+    }
   ]
 }
-
-// 动态背景粒子
-const particles = ref<Array<{ id: number; x: number; y: number; size: number; speed: number; opacity: number }>>([])
-
-onMounted(() => {
-  // 生成粒子
-  for (let i = 0; i < 50; i++) {
-    particles.value.push({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 4 + 1,
-      speed: Math.random() * 0.5 + 0.1,
-      opacity: Math.random() * 0.5 + 0.1
-    })
-  }
-})
 
 async function handleSubmit() {
   try {
     await formRef.value?.validate()
     loading.value = true
     
-    await userStore.login(formValue.value.username, formValue.value.password)
-    message.success('登录成功，欢迎回来！')
-    
-    const redirect = route.query.redirect as string || '/'
-    router.push(redirect)
+    await userStore.register(formValue.value.username, formValue.value.email, formValue.value.password)
+    message.success('注册成功，请登录')
+    router.push('/login')
   } catch (error: any) {
-    message.error(error?.message || error?.detail || '登录失败')
+    message.error(error?.message || '注册失败')
   } finally {
     loading.value = false
   }
@@ -63,7 +60,6 @@ async function handleSubmit() {
 
 <template>
   <div class="login-container">
-    <!-- 动态背景 -->
     <div class="bg-animation">
       <div class="gradient-orb orb-1"></div>
       <div class="gradient-orb orb-2"></div>
@@ -71,94 +67,65 @@ async function handleSubmit() {
       <div class="grid-overlay"></div>
     </div>
 
-    <!-- 粒子效果 -->
-    <div class="particles">
-      <div
-        v-for="p in particles"
-        :key="p.id"
-        class="particle"
-        :style="{
-          left: p.x + '%',
-          top: p.y + '%',
-          width: p.size + 'px',
-          height: p.size + 'px',
-          opacity: p.opacity,
-          animationDuration: (10 / p.speed) + 's'
-        }"
-      ></div>
-    </div>
-
-    <!-- 登录卡片 -->
     <div class="login-wrapper">
       <div class="login-card">
-        <!-- Logo 区域 -->
         <div class="logo-section">
           <div class="logo-icon">
             <NIcon size="32" color="#fff"><RocketOutline /></NIcon>
           </div>
           <h1 class="logo-title">Blog Admin</h1>
-          <p class="logo-subtitle">内容管理系统</p>
+          <p class="logo-subtitle">创建您的账户</p>
         </div>
 
-        <!-- 分隔线 -->
         <div class="divider">
-          <span>账号登录</span>
+          <span>账号注册</span>
         </div>
 
-        <!-- 表单 -->
         <NForm ref="formRef" :model="formValue" :rules="rules" class="login-form">
           <NFormItem path="username">
-            <NInput
-              v-model:value="formValue.username"
-              placeholder="请输入用户名"
-              size="large"
-              @keydown.enter="handleSubmit"
-            >
+            <NInput v-model:value="formValue.username" placeholder="请输入用户名" size="large">
               <template #prefix>
                 <NIcon :component="PersonOutline" class="input-icon" />
               </template>
             </NInput>
           </NFormItem>
+
+          <NFormItem path="email">
+            <NInput v-model:value="formValue.email" placeholder="请输入邮箱" size="large">
+              <template #prefix>
+                <NIcon :component="MailOutline" class="input-icon" />
+              </template>
+            </NInput>
+          </NFormItem>
           
           <NFormItem path="password">
-            <NInput
-              v-model:value="formValue.password"
-              type="password"
-              placeholder="请输入密码"
-              size="large"
-              show-password-on="click"
-              @keydown.enter="handleSubmit"
-            >
+            <NInput v-model:value="formValue.password" type="password" placeholder="请输入密码" size="large" show-password-on="click">
               <template #prefix>
                 <NIcon :component="LockClosedOutline" class="input-icon" />
               </template>
             </NInput>
           </NFormItem>
 
-          <NButton
-            type="primary"
-            block
-            size="large"
-            :loading="loading"
-            class="login-btn"
-            @click="handleSubmit"
-          >
+          <NFormItem path="confirmPassword">
+            <NInput v-model:value="formValue.confirmPassword" type="password" placeholder="请确认密码" size="large" show-password-on="click" @keydown.enter="handleSubmit">
+              <template #prefix>
+                <NIcon :component="LockClosedOutline" class="input-icon" />
+              </template>
+            </NInput>
+          </NFormItem>
+
+          <NButton type="primary" block size="large" :loading="loading" class="login-btn" @click="handleSubmit">
             <template #icon>
               <NIcon v-if="!loading"><RocketOutline /></NIcon>
             </template>
-            {{ loading ? '登录中...' : '立即登录' }}
+            {{ loading ? '注册中...' : '立即注册' }}
           </NButton>
         </NForm>
 
-        <!-- 底部信息 -->
         <div class="footer-info">
-          <p>还没有账户？<RouterLink to="/register" class="text-primary-400 hover:text-primary-300">立即注册</RouterLink></p>
+          <p>已有账户？<RouterLink to="/login" class="text-primary-400 hover:text-primary-300">立即登录</RouterLink></p>
         </div>
       </div>
-
-      <!-- 装饰元素 -->
-      <div class="decoration decoration-1"></div>
-      <div class="decoration decoration-2"></div>
     </div>
   </div>
 </template>
@@ -174,7 +141,6 @@ async function handleSubmit() {
   overflow: hidden;
 }
 
-/* 动态背景 */
 .bg-animation {
   position: absolute;
   inset: 0;
@@ -231,26 +197,6 @@ async function handleSubmit() {
   background-size: 50px 50px;
 }
 
-/* 粒子效果 */
-.particles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.particle {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 50%;
-  animation: twinkle 3s ease-in-out infinite;
-}
-
-@keyframes twinkle {
-  0%, 100% { opacity: 0.1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.2); }
-}
-
-/* 登录卡片容器 */
 .login-wrapper {
   position: relative;
   z-index: 10;
@@ -258,20 +204,17 @@ async function handleSubmit() {
 
 .login-card {
   width: 420px;
-  padding: 48px 40px;
+  padding: 40px;
   background: rgba(15, 15, 23, 0.8);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-/* Logo 区域 */
 .logo-section {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .logo-icon {
@@ -284,12 +227,6 @@ async function handleSubmit() {
   align-items: center;
   justify-content: center;
   box-shadow: 0 10px 40px -10px rgba(139, 92, 246, 0.5);
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 10px 40px -10px rgba(139, 92, 246, 0.5); }
-  50% { box-shadow: 0 10px 60px -10px rgba(139, 92, 246, 0.8); }
 }
 
 .logo-title {
@@ -307,11 +244,10 @@ async function handleSubmit() {
   font-size: 14px;
 }
 
-/* 分隔线 */
 .divider {
   display: flex;
   align-items: center;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .divider::before,
@@ -328,9 +264,8 @@ async function handleSubmit() {
   font-size: 13px;
 }
 
-/* 表单样式 */
 .login-form {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .input-icon {
@@ -349,12 +284,7 @@ async function handleSubmit() {
 }
 
 :deep(.n-form-item) {
-  --n-label-text-color: rgba(255, 255, 255, 0.7) !important;
   --n-feedback-text-color-error: #f87171 !important;
-}
-
-:deep(.n-form-item-blank) {
-  min-height: 48px;
 }
 
 .login-btn {
@@ -373,11 +303,6 @@ async function handleSubmit() {
   box-shadow: 0 15px 40px -10px rgba(139, 92, 246, 0.6) !important;
 }
 
-.login-btn:active {
-  transform: translateY(0);
-}
-
-/* 底部信息 */
 .footer-info {
   text-align: center;
   padding-top: 16px;
@@ -385,55 +310,14 @@ async function handleSubmit() {
 }
 
 .footer-info p {
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
 }
 
-/* 装饰元素 */
-.decoration {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.decoration-1 {
-  width: 200px;
-  height: 200px;
-  border: 1px solid rgba(139, 92, 246, 0.2);
-  top: -80px;
-  right: -80px;
-  animation: rotate 20s linear infinite;
-}
-
-.decoration-2 {
-  width: 150px;
-  height: 150px;
-  border: 1px dashed rgba(99, 102, 241, 0.2);
-  bottom: -60px;
-  left: -60px;
-  animation: rotate 15s linear infinite reverse;
-}
-
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* 响应式 */
 @media (max-width: 480px) {
   .login-card {
     width: calc(100vw - 32px);
     padding: 32px 24px;
-    margin: 16px;
-  }
-  
-  .logo-icon {
-    width: 60px;
-    height: 60px;
-  }
-  
-  .logo-title {
-    font-size: 24px;
   }
 }
 </style>

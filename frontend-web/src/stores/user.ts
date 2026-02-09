@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authApi, type User, getErrorMessage } from '@/api'
-import { encryptPassword } from '@/utils/crypto'
 
 export const useUserStore = defineStore('user', () => {
   const user = ref<User | null>(null)
@@ -11,8 +10,8 @@ export const useUserStore = defineStore('user', () => {
 
   async function login(username: string, password: string) {
     try {
-      const encryptedPassword = await encryptPassword(password)
-      const res = await authApi.login({ username, password: encryptedPassword })
+      // 直接发送密码（HTTPS 已保证传输安全）
+      const res = await authApi.login({ username, password })
       token.value = res.access_token
       localStorage.setItem('token', res.access_token)
       await fetchUser()
@@ -24,8 +23,8 @@ export const useUserStore = defineStore('user', () => {
 
   async function register(username: string, email: string, password: string) {
     try {
-      const encryptedPassword = await encryptPassword(password)
-      return authApi.register({ username, email, password: encryptedPassword })
+      // 直接发送密码（HTTPS 已保证传输安全）
+      return authApi.register({ username, email, password })
     } catch (error) {
       throw new Error(getErrorMessage(error))
     }

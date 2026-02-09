@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NConfigProvider, NMessageProvider, NDialogProvider, NLoadingBarProvider, darkTheme } from 'naive-ui'
+import { NConfigProvider, NMessageProvider, NDialogProvider, NLoadingBarProvider, darkTheme, zhCN, dateZhCN } from 'naive-ui'
 import { RouterView } from 'vue-router'
 
 const themeOverrides = {
@@ -13,7 +13,7 @@ const themeOverrides = {
 </script>
 
 <template>
-  <NConfigProvider :theme="darkTheme" :theme-overrides="themeOverrides">
+  <NConfigProvider :theme="darkTheme" :theme-overrides="themeOverrides" :locale="zhCN" :date-locale="dateZhCN">
     <NLoadingBarProvider>
       <NDialogProvider>
         <NMessageProvider>

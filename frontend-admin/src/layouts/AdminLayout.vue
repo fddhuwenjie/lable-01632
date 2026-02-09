@@ -26,38 +26,49 @@ function renderIcon(icon: any) {
   return () => h(NIcon, null, { default: () => h(icon) })
 }
 
-const menuOptions: MenuOption[] = [
-  {
-    label: () => h(RouterLink, { to: '/' }, { default: () => '仪表盘' }),
-    key: 'Dashboard',
-    icon: renderIcon(HomeOutline)
-  },
-  {
-    label: () => h(RouterLink, { to: '/articles' }, { default: () => '文章管理' }),
-    key: 'Articles',
-    icon: renderIcon(DocumentTextOutline)
-  },
-  {
-    label: () => h(RouterLink, { to: '/categories' }, { default: () => '分类管理' }),
-    key: 'Categories',
-    icon: renderIcon(FolderOutline)
-  },
-  {
-    label: () => h(RouterLink, { to: '/tags' }, { default: () => '标签管理' }),
-    key: 'Tags',
-    icon: renderIcon(PricetagsOutline)
-  },
-  {
-    label: () => h(RouterLink, { to: '/users' }, { default: () => '用户管理' }),
-    key: 'Users',
-    icon: renderIcon(PeopleOutline)
-  },
-  {
-    label: () => h(RouterLink, { to: '/settings' }, { default: () => '系统设置' }),
-    key: 'Settings',
-    icon: renderIcon(SettingsOutline)
+// 根据用户角色生成菜单
+const menuOptions = computed<MenuOption[]>(() => {
+  const baseMenus: MenuOption[] = [
+    {
+      label: () => h(RouterLink, { to: '/' }, { default: () => '仪表盘' }),
+      key: 'Dashboard',
+      icon: renderIcon(HomeOutline)
+    },
+    {
+      label: () => h(RouterLink, { to: '/articles' }, { default: () => '文章管理' }),
+      key: 'Articles',
+      icon: renderIcon(DocumentTextOutline)
+    }
+  ]
+
+  // 管理员专属菜单
+  if (userStore.isAdmin) {
+    baseMenus.push(
+      {
+        label: () => h(RouterLink, { to: '/categories' }, { default: () => '分类管理' }),
+        key: 'Categories',
+        icon: renderIcon(FolderOutline)
+      },
+      {
+        label: () => h(RouterLink, { to: '/tags' }, { default: () => '标签管理' }),
+        key: 'Tags',
+        icon: renderIcon(PricetagsOutline)
+      },
+      {
+        label: () => h(RouterLink, { to: '/users' }, { default: () => '用户管理' }),
+        key: 'Users',
+        icon: renderIcon(PeopleOutline)
+      },
+      {
+        label: () => h(RouterLink, { to: '/settings' }, { default: () => '系统设置' }),
+        key: 'Settings',
+        icon: renderIcon(SettingsOutline)
+      }
+    )
   }
-]
+
+  return baseMenus
+})
 
 const userDropdownOptions = [
   {

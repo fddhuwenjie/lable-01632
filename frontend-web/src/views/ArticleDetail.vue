@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { NIcon, NTag, NSkeleton, NEmpty, NAvatar, NDivider } from 'naive-ui'
-import { TimeOutline, EyeOutline, ArrowBack, PersonOutline } from '@vicons/ionicons5'
+import { NIcon, NTag, NSkeleton, NEmpty, NDivider } from 'naive-ui'
+import { TimeOutline, EyeOutline, ArrowBack } from '@vicons/ionicons5'
 import { marked } from 'marked'
 import { articlesApi, type Article } from '@/api'
 
@@ -74,11 +74,9 @@ function formatDate(date: string) {
 
         <div class="flex flex-wrap items-center gap-6 text-dark-muted">
           <div class="flex items-center gap-2">
-            <NAvatar round size="small" :src="article.author?.avatar">
-              <template #fallback>
-                <NIcon><PersonOutline /></NIcon>
-              </template>
-            </NAvatar>
+            <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium">
+              {{ article.author?.username?.charAt(0)?.toUpperCase() || 'U' }}
+            </div>
             <span>{{ article.author?.username || '匿名' }}</span>
           </div>
           <span class="flex items-center gap-1">
@@ -123,11 +121,9 @@ function formatDate(date: string) {
 
         <div class="mt-8 p-6 rounded-xl bg-dark-card border border-dark-border">
           <div class="flex items-center gap-4">
-            <NAvatar round size="large" :src="article.author?.avatar">
-              <template #fallback>
-                <NIcon size="24"><PersonOutline /></NIcon>
-              </template>
-            </NAvatar>
+            <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white text-lg font-medium">
+              {{ article.author?.username?.charAt(0)?.toUpperCase() || 'U' }}
+            </div>
             <div>
               <div class="font-semibold">{{ article.author?.username || '匿名' }}</div>
               <div class="text-dark-muted text-sm">文章作者</div>

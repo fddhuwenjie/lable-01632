@@ -9,6 +9,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '登录' }
   },
   {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/Register.vue'),
+    meta: { title: '注册' }
+  },
+  {
     path: '/',
     component: () => import('@/layouts/AdminLayout.vue'),
     meta: { requiresAuth: true },
@@ -41,25 +47,25 @@ const routes: RouteRecordRaw[] = [
         path: 'categories',
         name: 'Categories',
         component: () => import('@/views/Categories.vue'),
-        meta: { title: '分类管理' }
+        meta: { title: '分类管理', requiresAdmin: true }
       },
       {
         path: 'tags',
         name: 'Tags',
         component: () => import('@/views/Tags.vue'),
-        meta: { title: '标签管理' }
+        meta: { title: '标签管理', requiresAdmin: true }
       },
       {
         path: 'users',
         name: 'Users',
         component: () => import('@/views/Users.vue'),
-        meta: { title: '用户管理' }
+        meta: { title: '用户管理', requiresAdmin: true }
       },
       {
         path: 'settings',
         name: 'Settings',
         component: () => import('@/views/Settings.vue'),
-        meta: { title: '系统设置' }
+        meta: { title: '系统设置', requiresAdmin: true }
       }
     ]
   },
@@ -92,8 +98,10 @@ router.beforeEach(async (to, _from, next) => {
       next({ name: 'Login', query: { redirect: to.fullPath } })
       return
     }
-    if (!userStore.isAdmin) {
-      next({ name: 'Login' })
+    
+    // 检查管理员权限
+    if (to.meta.requiresAdmin && !userStore.isAdmin) {
+      next({ name: 'Dashboard' })
       return
     }
   }

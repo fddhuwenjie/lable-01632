@@ -1,20 +1,24 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, onMounted, h, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { NCard, NDataTable, NButton, NIcon, NTag, NSpace, NPagination, useMessage, useDialog } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { AddOutline, CreateOutline, TrashOutline, EyeOutline } from '@vicons/ionicons5'
 import { articlesApi, type Article } from '@/api'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const message = useMessage()
 const dialog = useDialog()
+const userStore = useUserStore()
 
 const loading = ref(true)
 const articles = ref<Article[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
+
+const isAdmin = computed(() => userStore.isAdmin)
 
 const columns: DataTableColumns<Article> = [
   { title: 'ID', key: 'id', width: 60 },
@@ -46,12 +50,23 @@ const columns: DataTableColumns<Article> = [
   }
 ]
 
-onMounted(() => loadArticles())
+onMounted(async () => {
+  // 等待用户信息加载完成
+  if (!userStore.initialized) {
+    await userStore.initPromise
+  }
+  loadArticles()
+})
 
 async function loadArticles() {
   loading.value = true
   try {
-    const res = await articlesApi.getList({ page: page.value, page_size: pageSize.value })
+    // 管理员看所有文章，普通用户只看自己的
+    const params: any = { page: page.value, page_size: pageSize.value }
+    if (!isAdmin.value) {
+      params.my_articles = true
+    }
+    const res = await articlesApi.getList(params)
     articles.value = res.items
     total.value = res.total
   } catch (error) {

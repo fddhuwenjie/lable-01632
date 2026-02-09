@@ -23,6 +23,8 @@ async def get_articles(
     category_id: Optional[int] = None,
     tag_id: Optional[int] = None,
     status: Optional[str] = None,
+    author_id: Optional[int] = None,
+    my_articles: bool = Query(False, description="只获取当前用户的文章"),
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_optional_user)
 ):
@@ -32,11 +34,24 @@ async def get_articles(
         selectinload(Article.tags)
     )
     
-    # Filter by status (only show published to non-admins)
-    if status:
-        query = query.where(Article.status == status)
-    elif not current_user or current_user.role != "admin":
-        query = query.where(Article.status == "published")
+    # 如果请求自己的文章
+    if my_articles and current_user:
+        query = query.where(Article.author_id == current_user.id)
+        # 自己的文章可以看到所有状态
+        if status:
+            query = query.where(Article.status == status)
+    elif author_id:
+        query = query.where(Article.author_id == author_id)
+        if status:
+            query = query.where(Article.status == status)
+        elif not current_user or current_user.role != "admin":
+            query = query.where(Article.status == "published")
+    else:
+        # Filter by status (only show published to non-admins)
+        if status:
+            query = query.where(Article.status == status)
+        elif not current_user or current_user.role != "admin":
+            query = query.where(Article.status == "published")
     
     if category_id:
         query = query.where(Article.category_id == category_id)
@@ -173,6 +188,10 @@ async def update_article(
     if not article:
         raise HTTPException(status_code=404, detail="文章不存在")
     
+    # 权限检查：只有作者或管理员可以修改文章
+    if article.author_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="无权修改此文章")
+    
     # Update fields
     update_data = article_data.model_dump(exclude_unset=True)
     
@@ -204,6 +223,10 @@ async def delete_article(
     
     if not article:
         raise HTTPException(status_code=404, detail="文章不存在")
+    
+    # 权限检查：只有作者或管理员可以删除文章
+    if article.author_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="无权删除此文章")
     
     await db.delete(article)
     return {"message": "删除成功"}

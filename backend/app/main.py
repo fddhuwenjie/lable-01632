@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.core.database import engine, Base
 from app.core.exceptions import AppException
 from app.core.logger import logger, log_error, log_info
-from app.api import auth, articles, categories, tags, users, settings as settings_api, stats
+from app.api import auth, articles, categories, tags, users, settings as settings_api, stats, upload
 from app.core.init_data import init_db
 
 
@@ -89,6 +89,7 @@ app.include_router(tags.router, prefix="/api/tags", tags=["标签"])
 app.include_router(users.router, prefix="/api/users", tags=["用户"])
 app.include_router(settings_api.router, prefix="/api/settings", tags=["设置"])
 app.include_router(stats.router, prefix="/api/stats", tags=["统计"])
+app.include_router(upload.router, prefix="/api/upload", tags=["上传"])
 
 
 @app.get("/api/health")
