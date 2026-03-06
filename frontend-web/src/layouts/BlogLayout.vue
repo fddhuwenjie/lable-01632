@@ -28,7 +28,7 @@ onMounted(async () => {
   <div class="min-h-screen bg-dark-bg text-dark-text">
     <!-- 导航栏 -->
     <header class="fixed top-0 left-0 right-0 z-50 glass">
-      <nav class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <nav class="max-w-6xl mx-auto px-4 h-16 grid grid-cols-[1fr_auto_1fr] items-center">
         <!-- Logo -->
         <RouterLink to="/" class="flex items-center gap-2 group">
           <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-cyan-500 flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform">
@@ -51,7 +51,7 @@ onMounted(async () => {
         </div>
 
         <!-- 右侧操作 -->
-        <div class="flex items-center gap-4">
+        <div class="flex items-center justify-end gap-4">
           <!-- 移动端菜单按钮 -->
           <NButton quaternary circle class="md:hidden" @click="showMobileMenu = true">
             <template #icon>

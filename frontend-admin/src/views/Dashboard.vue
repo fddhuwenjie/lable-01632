@@ -57,12 +57,19 @@ const statCards = [
   { key: 'total_tags', label: '标签总数', icon: PricetagsOutline, color: '#ec4899', bgColor: 'from-pink-500/20 to-rose-500/10' }
 ]
 
-const quickActions = [
-  { label: '写文章', icon: CreateOutline, to: '/article/create', color: '#6366f1' },
-  { label: '文章管理', icon: DocumentTextOutline, to: '/articles', color: '#10b981' },
-  { label: '用户管理', icon: PeopleOutline, to: '/users', color: '#f59e0b' },
-  { label: '标签管理', icon: PricetagsOutline, to: '/tags', color: '#ec4899' }
-]
+const quickActions = computed(() => {
+  const actions = [
+    { label: '写文章', icon: CreateOutline, to: '/article/create', color: '#6366f1' },
+    { label: '文章管理', icon: DocumentTextOutline, to: '/articles', color: '#10b981' }
+  ]
+  if (userStore.isAdmin) {
+    actions.push(
+      { label: '用户管理', icon: PeopleOutline, to: '/users', color: '#f59e0b' },
+      { label: '标签管理', icon: PricetagsOutline, to: '/tags', color: '#ec4899' }
+    )
+  }
+  return actions
+})
 
 // 计算最大阅读量用于进度条
 const maxViews = computed(() => {
